@@ -12,6 +12,7 @@ from letterbag import LetterBag
 from vocab import Vocab
 from jumble import jumbled
 import config
+import os
 
 ###
 # Globals
@@ -73,7 +74,7 @@ def success():
 #   a JSON request handler
 #######################
 
-
+'''
 @app.route("/_check", methods=["POST"])
 def check():
     """
@@ -115,13 +116,14 @@ def check():
     if len(matches) >= flask.session["target_count"]:
        return flask.redirect(flask.url_for("success"))
     else:
-       return flask.redirect(flask.url_for("keep_going"))
+       return flask.redirect(flask.url_for("keep_going"))'''
 
 ###############
 # AJAX request handlers
 #   These return JSON, rather than rendering pages.
 ###############
 
+matches = []
 
 @app.route("/_example")
 def example():
@@ -130,7 +132,42 @@ def example():
     """
     app.logger.debug("Got a JSON request")
     rslt = {"key": "value"}
+    
+    text = flask.request.args.get("text", type=str)
+    jumble = flask.session["jumble"]
+
+    in_jumble = LetterBag(jumble).contains(text)
+    matched = WORDS.has(text)
+
+    successful = False
+
+    
+    if text in matches:
+        rslt["key"] = "You already found '{}'".format(text)
+    elif not matched:
+        rslt["key"] = "'{}' isn't in the list of words".format(text)
+    elif not in_jumble:
+        rslt["key"] = '"{}" can\'t be made from the letters {}'.format(text, jumble)
+    elif matched and in_jumble and  (text not in matches):
+        rslt["key"] = "You find '{}'!".format(text)
+        matches.append("{}".format(text))
+
+    else:
+        app.logger.debug("This case shouldn't happen!")
+        assert False  # Raises AssertionError
+
+    if len(matches) >= flask.session["target_count"]:
+        successful = True
+    
+    if (successful):   
+
+        rslt["key"] = 'success page'
+        successful = False
+        for i in range(len(matches)):
+            matches.pop()
+
     return flask.jsonify(result=rslt)
+
 
 
 #################

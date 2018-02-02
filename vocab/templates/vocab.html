@@ -80,14 +80,14 @@
 <br />
 <div class="row">
   <div class="col-xs-6 text-center">
-  <form id="entry" method="POST" action="/_check">
+  <form id="entry">
     <label for="attempt">Word:</label>
     <input id="attempt" name="attempt" type="text" width="15"
       autocomplete="off"  autofocus />
     <input type="submit" name="try" />
   </form>
 </div></div>
-
+<p id="response"> </p> 
 <br />
 
 {% if session.matches|length is not equalto 0  %}
@@ -108,6 +108,66 @@
     {% endfor %}
   {% endif %}
 {% endwith %}
+
+
+
+
+<script>
+
+// Suppress normal form submission
+$("#entry").submit( function(event) {
+   event.preventDefault();
+  });
+
+// On each keystroke, ask the server whether the current 
+// word is long enough. 
+//
+// We use 'keyup' because the form value
+// is updated before that event is generated.
+// keypress is triggered before the input field has been
+// updated.  Be aware that we'll see non-character keys like
+// shift and control, so make sure whatever you do with the
+// event does not depend on it being a letter. 
+//
+$("#attempt").keyup(function(event) {
+   var txt = $("#attempt").val();  // Current content of the input field
+   var keycode = event.which;      // They key that just went up
+   var letter = String.fromCharCode(keycode);
+
+   // That letter might not be a letter ... it could be the
+   // the backspace key, or even the shift key, because 'keyup'
+   // catches all kinds of keys.  (Also, the difference between
+   // upper and lower case comes from state of shift key + key code,
+   // so ignoring the shift key we get only the upper case letters.
+
+   if (! "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)) { return }
+
+   $.getJSON( "/_example", { text: txt }, 
+              function(data) {
+                rsval = data.result.key;
+                if (rsval != 'success page'){
+                console.log("rsval: " + rsval)
+                $("#response").html(rsval);}
+                else{
+                  window.location.assign("../success")
+                }
+                
+               }
+           );
+   });
+
+// Demonstration of how we can insert graphical elements
+// into a page, possibly building up the URLs of the elements
+// dynamically.  In this case I have a set of Scrabble tiles with
+// point values and a consistent naming scheme that allows me to
+// generate a URL for each letter.  Browsers should cache the graphics
+// files so that http requests are sent only the first time each
+// element is encountered. 
+//
+</script>
+
+
+
 
 
 
